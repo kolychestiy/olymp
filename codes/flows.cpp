@@ -97,7 +97,7 @@ struct Flow_network {
             }
 
             fill_n(ptr.begin(), n, 0);
-            F -= dfs(s, k - F);
+            F += dfs(s, k - F);
         }
 
         return F;
