@@ -26,52 +26,67 @@ int fpow(int a, int p){
 
 vector<int> roots;
 
-vector<int> fft(vector<int> a, int root){
-    if (a.size() == 1){
-        return a;
-    }
-
-    int sz = a.size() >> 1;
-    vector<int> p0(sz), p1(sz);
-    for (int i = 0; i < sz; i++){
-        p0[i] = a[i << 1];
-        p1[i] = a[i << 1 | 1];
-    }
-
-    int sq = root * root % mod;
-    auto r0 = fft(p0, sq);
-    auto r1 = fft(p1, sq);
-
-    vector<int> r(a.size());
-    int x = 1;
-    for (int i = 0; i < (int)r.size(); i++){
-        r[i] = (r0[i & (sz - 1)] + x*r1[i & (sz - 1)]) % mod;
-        x = x * root % mod;
-    }
-
-    return r;
-}
-
 vector<int> operator * (vector<int> a, vector<int> b){
+
     int sz = 1;
     while ((1 << sz) < (int)a.size() + (int)b.size()){
         sz++;
     }
 
     int SZ = 1 << sz;
+
+    vector<int> rev(SZ);
+    for (int i = 0; i < SZ; i++){
+        int j = 0;
+        for (int b = 0; b < sz; b++){
+            j <<= 1;
+            j |= (i >> b) & 1;
+        }
+        rev[i] = j;
+    }
+
+    auto fft = [&](vector<int>& a, int br){
+        for (int i = 0; i < SZ; i++){
+            if (rev[i] < i){
+                swap(a[rev[i]], a[i]);
+            }
+        }
+
+        for (int j = 1; j <= sz; j++){
+            int root = fpow(br, 1 << (sz - j));
+            int sj = 1 << j;
+            int ssj = sj >> 1;
+            int x = 1;
+            for (int k = 0; k < ssj; k++){
+                for (int i = 0; i < SZ; i += sj){
+                    int z0 = a[i + k];
+                    int z1 = x * a[i + k + ssj] % mod;
+                    a[i + k] = z0 + z1;
+                    if (a[i + k] > mod){
+                        a[i + k] -= mod;
+                    }
+                    a[i + k + ssj] = z0 - z1;
+                    if (a[i + k + ssj] < 0){
+                        a[i + k + ssj] += mod;
+                    }
+                }
+                x = x * root % mod;
+            }
+        }
+    };
+
     a.resize(SZ);
     b.resize(SZ);
 
-    int root = roots[sz];
-    auto ra = fft(a, root);
-    auto rb = fft(b, root);
+    fft(a, roots[sz]);
+    fft(b, roots[sz]);
 
-    vector<int> rc(SZ);
+    vector<int> c(SZ);
     for (int i = 0; i < SZ; i++){
-        rc[i] = ra[i] * rb[i] % mod;
+        c[i] = a[i] * b[i] % mod;
     }
 
-    auto c = fft(rc, fpow(root, mod - 2));
+    fft(c, fpow(roots[sz], mod - 2));
     int rn = fpow(SZ, mod - 2);
     for (auto& e : c){
         e = (e * rn) % mod;
@@ -131,6 +146,8 @@ void init_roots(){
 }
 
 signed main(){
+
+    freopen("output.txt", "w", stdout);
 
     init_roots();
     vector<int> a = {1, 1, 1};
