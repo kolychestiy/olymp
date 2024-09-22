@@ -1,6 +1,6 @@
 Перед установкой VS code рекомендуется [установить компилятор C++](https://github.com/kolychestiy/olymp/blob/main/Настройка%20компьютера/установка%20компилятора%20C++.md).
 
-1.  Скачать и установаить VS code
+1.  Скачать и установить VS code
 
     https://code.visualstudio.com/
 
