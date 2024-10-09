@@ -116,6 +116,37 @@ struct Flow_network {
         }
         return ans;
     }
+
+    vector<Ans_edge> get_cut(){
+        vector<char> was(n);
+        queue <int> q({s});
+        was[s] = 1;
+        while (q.size()){
+            int cur = q.front();
+            q.pop();
+            for (int e : g[cur]){
+                if (flow[e] == cap[e]){
+                    continue;
+                }
+                int next = to[e];
+                if (was[next]){
+                    continue;
+                }
+
+                was[next] = 1;
+                q.push(next);
+            }
+        }
+
+        vector <Ans_edge> ans;
+        for (int i = 0; i < to.size(); i += 2){
+            if (was[from[i]] && !was[to[i]]){
+                ans.push_back({from[i], to[i], flow[i]});
+            }
+        }
+
+        return ans;
+    }
 };
 
 struct Flow_cost_network : Flow_network {
