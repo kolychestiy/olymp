@@ -15,19 +15,20 @@ ostream& operator << (ostream& out, const vector<T>& a){
 const int mod = 998244353;
 
 int fpow(int a, int p){
-    if (p == 0){
-        return 1;
+    int ans = 1;
+    while (p){
+        if (p & 1){
+            ans = ans * a % mod;
+        }
+        a = a * a % mod;
+        p >>= 1;
     }
-    if (p & 1){
-        return fpow(a, p - 1) * a % mod;
-    }
-    return fpow(a*a % mod, p >> 1);
+    return ans;
 }
 
 vector<int> roots;
 
 vector<int> operator * (vector<int> a, vector<int> b){
-
     int sz = 1;
     while ((1 << sz) < (int)a.size() + (int)b.size()){
         sz++;
@@ -36,13 +37,13 @@ vector<int> operator * (vector<int> a, vector<int> b){
     int SZ = 1 << sz;
 
     vector<int> rev(SZ);
-    for (int i = 0; i < SZ; i++){
-        int j = 0;
-        for (int b = 0; b < sz; b++){
-            j <<= 1;
-            j |= (i >> b) & 1;
-        }
+    for (int i = 0, j = 0; i < SZ; i++){
         rev[i] = j;
+        int k = SZ / 2;
+        for (; j & k; k >>= 1){
+            j ^= k;
+        }
+        j ^= k;
     }
 
     auto fft = [&](vector<int>& a, int br){
@@ -52,25 +53,35 @@ vector<int> operator * (vector<int> a, vector<int> b){
             }
         }
 
-        for (int j = 1; j <= sz; j++){
-            int root = fpow(br, 1 << (sz - j));
-            int sj = 1 << j;
-            int ssj = sj >> 1;
-            int x = 1;
-            for (int k = 0; k < ssj; k++){
-                for (int i = 0; i < SZ; i += sj){
-                    int z0 = a[i + k];
-                    int z1 = x * a[i + k + ssj] % mod;
-                    a[i + k] = z0 + z1;
-                    if (a[i + k] > mod){
-                        a[i + k] -= mod;
+        for (int j = 2; j <= SZ; j <<= 1){
+            int root = br;
+            for (int i = j; i < SZ; i <<= 1){
+                root = root * root % mod;
+            }
+            int lj = j >> 1;
+            vector<int> rt(lj);
+            rt[0] = 1;
+            for (int i = 1; i < lj; i++){
+                rt[i] = rt[i - 1] * root % mod;
+            }
+ 
+            for (int i = 0; i < SZ; i += j){
+                int z = 0;
+                auto il = a.begin() + i;
+                auto ir = il + lj;
+                auto en = ir;
+                auto it = rt.begin();
+                for (; il != en; il++, ir++, it++){
+                    z = *ir * *it % mod;
+                    *ir = *il - z;
+                    if (*ir < mod){
+                        *ir += mod;
                     }
-                    a[i + k + ssj] = z0 - z1;
-                    if (a[i + k + ssj] < 0){
-                        a[i + k + ssj] += mod;
+                    *il += z;
+                    if (*il >= mod){
+                        *il -= mod;
                     }
                 }
-                x = x * root % mod;
             }
         }
     };
@@ -81,21 +92,20 @@ vector<int> operator * (vector<int> a, vector<int> b){
     fft(a, roots[sz]);
     fft(b, roots[sz]);
 
-    vector<int> c(SZ);
     for (int i = 0; i < SZ; i++){
-        c[i] = a[i] * b[i] % mod;
+        a[i] = a[i] * b[i] % mod;
     }
 
-    fft(c, fpow(roots[sz], mod - 2));
+    fft(a, fpow(roots[sz], mod - 2));
     int rn = fpow(SZ, mod - 2);
-    for (auto& e : c){
-        e = (e * rn) % mod;
+    for (auto& e : a){
+        e = e * rn % mod;
     }
 
-    while (c.size() > 1 && c.back() == 0){
-        c.pop_back();
+    while (a.size() > 1 && a.back() == 0){
+        a.pop_back();
     }
-    return c;
+    return a;
 }
 
 vector<int> inverse(const vector<int>& p, vector<int> q, int sz){
@@ -125,7 +135,7 @@ vector<int> inverse(const vector<int>& p, vector<int> q, int sz){
 }
 
 void init_roots(){
-    int mx_sz = 21;
+    int mx_sz = 23;
     int j = 1;
     for (; j < mod; j++){
         if (fpow(j, 1 << (mx_sz - 1)) == (mod - 1)){
@@ -146,8 +156,6 @@ void init_roots(){
 }
 
 signed main(){
-
-    freopen("output.txt", "w", stdout);
 
     init_roots();
     vector<int> a = {1, 1, 1};
