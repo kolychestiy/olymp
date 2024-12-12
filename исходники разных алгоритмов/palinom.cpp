@@ -39,7 +39,7 @@ vector<int> operator * (vector<int> a, vector<int> b){
     vector<int> rev(SZ);
     for (int i = 0, j = 0; i < SZ; i++){
         rev[i] = j;
-        int k = SZ / 2;
+        int k = SZ >> 1;
         for (; j & k; k >>= 1){
             j ^= k;
         }
